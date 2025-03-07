@@ -11,7 +11,9 @@ import SwiftUI
 struct vitesseApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            LoginView()
+                .preferredColorScheme(.light)
         }
     }
 }
+
