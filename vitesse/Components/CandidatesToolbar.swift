@@ -9,11 +9,15 @@ import SwiftUI
 
 struct CandidatesToolbar: View {
     @ObservedObject var viewModel: CandidateViewModel
+    let onDelete: () -> Void
     
     var body: some View {
         HStack {
             Button(viewModel.isEditing ? "Cancel" : "Edit") {
                 viewModel.isEditing.toggle()
+                if !viewModel.isEditing {
+                    viewModel.clearSelection()
+                }
             }
             .foregroundColor(.black)
             
@@ -26,19 +30,17 @@ struct CandidatesToolbar: View {
             
             if viewModel.isEditing {
                 Button("Delete") {
-                    viewModel.isEditing.toggle()
-                    // et supprimer
+                    onDelete()
                 }
-                .foregroundColor(.black)
+                .foregroundColor(.red)
+                .disabled(viewModel.selectedCandidateIds.isEmpty)
             } else {
                 Button {
                     viewModel.isFavoritesFiltering.toggle()
-                    // filtre les candidats si ils sont favoris ou non
                 } label: {
                     Image(systemName: viewModel.isFavoritesFiltering ? "star.fill" : "star")
+                        .foregroundColor(viewModel.isFavoritesFiltering ? .black : .gray)
                 }
-                
-                .foregroundColor(.black)
             }
         }
     }

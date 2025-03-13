@@ -396,7 +396,7 @@ class APIService {
         
         let url = URL(string: "\(baseURL)/candidate/\(id)/favorite")!
         var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
+        request.httpMethod = "POST"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
         print("⭐ ToggleFavorite - Request URL: \(url)")

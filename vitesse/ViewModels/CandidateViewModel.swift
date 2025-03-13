@@ -17,16 +17,71 @@ class CandidateViewModel: ObservableObject {
     @Published var isEditing = false
     @Published var isFavoritesFiltering = false
     @Published var searchText: String = ""
+    @Published var selectedCandidateIds: Set<String> = []
     
     private var cancellables = Set<AnyCancellable>()
+    
+    var filteredCandidates: [Candidate] {
+        candidates.filter { candidate in
+            let nameMatch = searchText.isEmpty ||
+                            candidate.firstName.lowercased().contains(searchText.lowercased()) ||
+                            candidate.lastName.lowercased().contains(searchText.lowercased()) ||
+                            candidate.email.lowercased().contains(searchText.lowercased())
+            
+            let favoriteMatch = !isFavoritesFiltering || candidate.isFavorite
+            
+            return nameMatch && favoriteMatch
+        }
+    }
     
     init() {
         checkAdminStatus()
     }
     
-    private func checkAdminStatus() {
+    func checkAdminStatus() {
+        // Force a re-read from UserDefaults
         if let isAdmin = UserDefaults.standard.object(forKey: "isAdmin") as? Bool {
             self.isAdmin = isAdmin
+            print("Admin status checked: \(isAdmin)")
+        } else {
+            print("No admin status found in UserDefaults")
+        }
+    }
+    
+    func isSelected(_ candidateId: String) -> Bool {
+        return selectedCandidateIds.contains(candidateId) && isEditing
+    }
+    
+    func toggleSelection(_ candidateId: String) {
+        if selectedCandidateIds.contains(candidateId) {
+            selectedCandidateIds.remove(candidateId)
+        } else {
+            selectedCandidateIds.insert(candidateId)
+        }
+    }
+    
+    func clearSelection() {
+        selectedCandidateIds.removeAll()
+    }
+    
+    @MainActor
+    func deleteSelectedCandidates() {
+        guard !selectedCandidateIds.isEmpty else { return }
+        
+        // Create a copy to avoid modification during iteration
+        let candidatesToDelete = selectedCandidateIds
+        
+        // Reset selection immediately for better UX
+        selectedCandidateIds.removeAll()
+        
+        // Now the view will update, then exit edit mode after deletions complete
+        isEditing = false
+        
+        // Delete each candidate
+        for id in candidatesToDelete {
+            deleteCandidate(id: id) { _ in
+                // Success/failure handling is done in the deleteCandidate method
+            }
         }
     }
     
@@ -151,8 +206,10 @@ class CandidateViewModel: ObservableObject {
     
     @MainActor
     func toggleFavorite(id: String, completion: @escaping (Bool) -> Void) {
+        let isAdmin = UserDefaults.standard.bool(forKey: "isAdmin")
+        
         guard isAdmin else {
-            error = "Seuls les administrateurs peuvent modifier le statut favori"
+            error = "You need to be an admin to mark candidates as favorites."
             completion(false)
             return
         }

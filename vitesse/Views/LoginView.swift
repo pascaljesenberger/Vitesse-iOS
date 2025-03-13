@@ -92,9 +92,6 @@ struct LoginView: View {
                     
                     Spacer()
                 }
-                .onAppear {
-                    fetchData()
-                }
                 .padding(.horizontal, 26)
                 .background(Color.white)
                 .navigationDestination(isPresented: $navigateToCandidatesList) {
