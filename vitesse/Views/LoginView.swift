@@ -33,7 +33,7 @@ struct LoginView: View {
                                 TextFieldText: $viewModel.email,
                                 placeholder: "Enter your email or username"
                             )
-                            .onChange(of: viewModel.email) { _ in
+                            .onChange(of: viewModel.email) {
                                 viewModel.validateEmptyFields()
                             }
                         }
@@ -45,7 +45,7 @@ struct LoginView: View {
                                 placeholder: "Enter your password",
                                 isSecure: true
                             )
-                            .onChange(of: viewModel.password) { _ in
+                            .onChange(of: viewModel.password) {
                                 viewModel.validateEmptyFields()
                             }
                         }
@@ -97,8 +97,8 @@ struct LoginView: View {
                 .navigationDestination(isPresented: $navigateToCandidatesList) {
                     CandidatesListView()
                 }
-                .onChange(of: viewModel.isLoggedIn) { isLoggedIn in
-                    if isLoggedIn {
+                .onChange(of: viewModel.isLoggedIn) {
+                    if viewModel.isLoggedIn {
                         navigateToCandidatesList = true
                     }
                 }

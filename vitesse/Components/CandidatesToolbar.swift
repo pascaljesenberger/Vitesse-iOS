@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct CandidatesToolbar: View {
+struct CandidatesToolbar: ToolbarContent {
     @ObservedObject var viewModel: CandidateViewModel
     let onDelete: () -> Void
     
-    var body: some View {
-        HStack {
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
             Button(viewModel.isEditing ? "Cancel" : "Edit") {
                 viewModel.isEditing.toggle()
                 if !viewModel.isEditing {
@@ -20,14 +20,14 @@ struct CandidatesToolbar: View {
                 }
             }
             .foregroundColor(.black)
-            
-            Spacer()
-            
+        }
+        
+        ToolbarItem(placement: .principal) {
             Text("Candidates")
                 .font(.system(size: 20, weight: .bold))
-            
-            Spacer()
-            
+        }
+        
+        ToolbarItem(placement: .navigationBarTrailing) {
             if viewModel.isEditing {
                 Button("Delete") {
                     onDelete()

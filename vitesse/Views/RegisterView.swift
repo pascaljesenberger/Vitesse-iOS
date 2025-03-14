@@ -25,7 +25,7 @@ struct RegisterView: View {
                             TextFieldText: $viewModel.firstName,
                             placeholder: "Enter your first name"
                         )
-                        .onChange(of: viewModel.firstName) { _ in
+                        .onChange(of: viewModel.firstName) {
                             viewModel.validateEmptyFields()
                         }
                         
@@ -34,7 +34,7 @@ struct RegisterView: View {
                             TextFieldText: $viewModel.lastName,
                             placeholder: "Enter your last name"
                         )
-                        .onChange(of: viewModel.lastName) { _ in
+                        .onChange(of: viewModel.lastName) {
                             viewModel.validateEmptyFields()
                         }
                         
@@ -44,7 +44,7 @@ struct RegisterView: View {
                                 TextFieldText: $viewModel.email,
                                 placeholder: "Enter your email"
                             )
-                            .onChange(of: viewModel.email) { _ in
+                            .onChange(of: viewModel.email) {
                                 viewModel.validateEmail()
                                 viewModel.validateEmptyFields()
                             }
@@ -63,7 +63,7 @@ struct RegisterView: View {
                             placeholder: "Enter your password",
                             isSecure: true
                         )
-                        .onChange(of: viewModel.password) { _ in
+                        .onChange(of: viewModel.password) {
                             viewModel.validatePasswords()
                             viewModel.validateEmptyFields()
                         }
@@ -75,7 +75,7 @@ struct RegisterView: View {
                                 placeholder: "Confirm your password",
                                 isSecure: true
                             )
-                            .onChange(of: viewModel.confirmPassword) { _ in
+                            .onChange(of: viewModel.confirmPassword) {
                                 viewModel.validatePasswords()
                                 viewModel.validateEmptyFields()
                             }
@@ -120,8 +120,8 @@ struct RegisterView: View {
                 }
                 .padding(.horizontal, 26)
                 .background(Color.white)
-                .onChange(of: viewModel.isRegistered) { isRegistered in
-                    if isRegistered {
+                .onChange(of: viewModel.isRegistered) {
+                    if viewModel.isRegistered {
                         dismiss()
                     }
                 }

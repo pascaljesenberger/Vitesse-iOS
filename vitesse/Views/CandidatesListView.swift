@@ -16,8 +16,8 @@ struct CandidatesListView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 SearchBar(text: $viewModel.searchText)
-                            .padding(.horizontal)
-                            .padding(.bottom)
+                    .padding(.horizontal)
+                    .padding(.bottom)
                 
                 if viewModel.isLoading {
                     ProgressView()
@@ -31,17 +31,14 @@ struct CandidatesListView: View {
                             .padding()
                     }
                     .refreshable {
-                        await viewModel.loadCandidates()
+                        viewModel.loadCandidates()
                     }
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 10) {
                             ForEach(viewModel.filteredCandidates) { candidate in
                                 CandidateRow(
-                                    firstName: candidate.firstName,
-                                    lastName: candidate.lastName,
-                                    email: candidate.email,
-                                    isFavorite: candidate.isFavorite,
+                                    candidate: candidate,
                                     isSelected: viewModel.isSelected(candidate.id),
                                     isEditing: viewModel.isEditing,
                                     onToggleFavorite: {
@@ -57,17 +54,15 @@ struct CandidatesListView: View {
                         .padding(.vertical)
                     }
                     .refreshable {
-                        await viewModel.loadCandidates()
+                        viewModel.loadCandidates()
                     }
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    CandidatesToolbar(
-                        viewModel: viewModel,
-                        onDelete: deleteSelectedCandidates
-                    )
-                }
+                CandidatesToolbar(
+                    viewModel: viewModel,
+                    onDelete: deleteSelectedCandidates
+                )
             }
             .navigationBarBackButtonHidden(true)
             .alert(alertMessage, isPresented: $showingAlert) {

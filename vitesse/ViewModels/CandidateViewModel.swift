@@ -11,10 +11,12 @@ import Combine
 class CandidateViewModel: ObservableObject {
     @Published var candidates: [Candidate] = []
     @Published var selectedCandidate: Candidate?
+    @Published var candidateId: String?
     @Published var isLoading: Bool = false
     @Published var error: String? = nil
     @Published var isAdmin: Bool = false
     @Published var isEditing = false
+    @Published var isEditingCandidate = false
     @Published var isFavoritesFiltering = false
     @Published var searchText: String = ""
     @Published var selectedCandidateIds: Set<String> = []
@@ -178,64 +180,64 @@ class CandidateViewModel: ObservableObject {
             isLoading = false
         }
     }
-    
-    @MainActor
-    func deleteCandidate(id: String, completion: @escaping (Bool) -> Void) {
-        isLoading = true
-        error = nil
         
-        Task {
-            do {
-                try await APIService.shared.deleteCandidate(id: id)
-                
-                candidates.removeAll { $0.id == id }
-                
-                if selectedCandidate?.id == id {
-                    selectedCandidate = nil
+        @MainActor
+        func deleteCandidate(id: String, completion: @escaping (Bool) -> Void) {
+            isLoading = true
+            error = nil
+            
+            Task {
+                do {
+                    try await APIService.shared.deleteCandidate(id: id)
+                    
+                    candidates.removeAll { $0.id == id }
+                    
+                    if selectedCandidate?.id == id {
+                        selectedCandidate = nil
+                    }
+                    
+                    completion(true)
+                } catch {
+                    self.error = "Impossible de supprimer le candidat: \(error.localizedDescription)"
+                    print("Delete candidate error: \(error.localizedDescription)")
+                    completion(false)
                 }
-                
-                completion(true)
-            } catch {
-                self.error = "Impossible de supprimer le candidat: \(error.localizedDescription)"
-                print("Delete candidate error: \(error.localizedDescription)")
-                completion(false)
+                isLoading = false
             }
-            isLoading = false
+        }
+        
+        @MainActor
+        func toggleFavorite(id: String, completion: @escaping (Bool) -> Void) {
+            let isAdmin = UserDefaults.standard.bool(forKey: "isAdmin")
+            
+            guard isAdmin else {
+                error = "You need to be an admin to mark candidates as favorites."
+                completion(false)
+                return
+            }
+            
+            isLoading = true
+            error = nil
+            
+            Task {
+                do {
+                    let updatedCandidate = try await APIService.shared.toggleCandidateFavorite(id: id)
+                    
+                    if let index = candidates.firstIndex(where: { $0.id == id }) {
+                        candidates[index] = updatedCandidate
+                    }
+                    
+                    if selectedCandidate?.id == id {
+                        selectedCandidate = updatedCandidate
+                    }
+                    
+                    completion(true)
+                } catch {
+                    self.error = "Impossible de modifier le statut favori: \(error.localizedDescription)"
+                    print("Toggle favorite error: \(error.localizedDescription)")
+                    completion(false)
+                }
+                isLoading = false
+            }
         }
     }
-    
-    @MainActor
-    func toggleFavorite(id: String, completion: @escaping (Bool) -> Void) {
-        let isAdmin = UserDefaults.standard.bool(forKey: "isAdmin")
-        
-        guard isAdmin else {
-            error = "You need to be an admin to mark candidates as favorites."
-            completion(false)
-            return
-        }
-        
-        isLoading = true
-        error = nil
-        
-        Task {
-            do {
-                let updatedCandidate = try await APIService.shared.toggleCandidateFavorite(id: id)
-                
-                if let index = candidates.firstIndex(where: { $0.id == id }) {
-                    candidates[index] = updatedCandidate
-                }
-                
-                if selectedCandidate?.id == id {
-                    selectedCandidate = updatedCandidate
-                }
-                
-                completion(true)
-            } catch {
-                self.error = "Impossible de modifier le statut favori: \(error.localizedDescription)"
-                print("Toggle favorite error: \(error.localizedDescription)")
-                completion(false)
-            }
-            isLoading = false
-        }
-    }
-}
