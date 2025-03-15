@@ -32,6 +32,7 @@ struct CustomTextField: View {
                     )
             } else {
                 TextField(placeholder, text: $TextFieldText)
+                    .autocapitalization(.none)
                     .padding()
                     .frame(height: 52)
                     .background(Color.white)
