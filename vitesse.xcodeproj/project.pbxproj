@@ -53,11 +53,6 @@
 			path = vitesseTests;
 			sourceTree = "<group>";
 		};
-		5012EE7E2D67A3C70046DEC2 /* vitesseUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = vitesseUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,7 +85,6 @@
 			children = (
 				5012EE632D67A3C50046DEC2 /* vitesse */,
 				5012EE742D67A3C70046DEC2 /* vitesseTests */,
-				5012EE7E2D67A3C70046DEC2 /* vitesseUITests */,
 				5012EE622D67A3C50046DEC2 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,9 +159,6 @@
 			);
 			dependencies = (
 				5012EE7D2D67A3C70046DEC2 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				5012EE7E2D67A3C70046DEC2 /* vitesseUITests */,
 			);
 			name = vitesseUITests;
 			packageProductDependencies = (

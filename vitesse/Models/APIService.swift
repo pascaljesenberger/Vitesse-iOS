@@ -8,19 +8,22 @@
 import Foundation
 
 class APIService {
+    // Singleton pour partager une instance unique de APIService
     static let shared = APIService()
+    
+    // URL de base de l'API
     private let baseURL = "http://127.0.0.1:8080"
     
     // MARK: - Auth Methods
     
-    
+    /// Authentifie un utilisateur avec un email et un mot de passe
     func authenticate(email: String, password: String) async throws -> AuthResponse {
         let url = URL(string: "\(baseURL)/user/auth")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Structure exacte requise par l'API
+        // Structure du corps de la requête
         let body = ["email": email, "password": password]
         let jsonData = try JSONEncoder().encode(body)
         request.httpBody = jsonData
@@ -36,17 +39,20 @@ class APIService {
             if let httpResponse = response as? HTTPURLResponse {
                 print("🔐 Authenticate - Status Code: \(httpResponse.statusCode)")
                 
+                // Vérifie si le statut HTTP est différent de 200 (succès)
                 if httpResponse.statusCode != 200 {
                     throw APIError.loginFailed
                 }
             }
             
+            // Décode la réponse JSON en un objet AuthResponse
             let decoder = JSONDecoder()
             let authResponse = try decoder.decode(AuthResponse.self, from: data)
             print("🔐 Authentication successful: token=\(authResponse.token.prefix(10))... isAdmin=\(authResponse.isAdmin)")
             return authResponse
         } catch let decodingError as DecodingError {
             print("❌ Authenticate - Decoding Error: \(decodingError)")
+            // Gestion des erreurs de décodage
             switch decodingError {
             case .keyNotFound(let key, _):
                 print("❌ Missing key: \(key.stringValue)")
@@ -66,13 +72,14 @@ class APIService {
         }
     }
     
+    /// Enregistre un nouvel utilisateur
     func register(firstName: String, lastName: String, email: String, password: String) async throws {
         let url = URL(string: "\(baseURL)/user/register")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Structure exacte requise par l'API
+        // Structure du corps de la requête
         let body = [
             "firstName": firstName,
             "lastName": lastName,
@@ -97,6 +104,7 @@ class APIService {
         
         print("📝 Register - Status Code: \(httpResponse.statusCode)")
         
+        // Vérifie si le statut HTTP est 201 (créé)
         guard httpResponse.statusCode == 201 else {
             print("❌ Register - Failed with status code: \(httpResponse.statusCode)")
             throw APIError.registrationFailed
@@ -107,7 +115,9 @@ class APIService {
     
     // MARK: - Candidate Methods
     
+    /// Récupère tous les candidats
     func getAllCandidates() async throws -> [Candidate] {
+        // Vérifie la présence du token d'authentification
         guard let token = UserDefaults.standard.string(forKey: "authToken") else {
             print("❌ GetAllCandidates - No token found")
             throw APIError.noToken
@@ -128,6 +138,7 @@ class APIService {
             if let httpResponse = response as? HTTPURLResponse {
                 print("👥 GetAllCandidates - Status Code: \(httpResponse.statusCode)")
                 
+                // Gestion des erreurs d'autorisation
                 if httpResponse.statusCode == 401 {
                     throw APIError.notAuthorized
                 } else if httpResponse.statusCode != 200 {
@@ -135,11 +146,13 @@ class APIService {
                 }
             }
             
+            // Décode la réponse JSON en une liste de candidats
             let candidates = try JSONDecoder().decode([Candidate].self, from: data)
             print("✅ Retrieved \(candidates.count) candidates")
             return candidates
         } catch let decodingError as DecodingError {
             print("❌ GetAllCandidates - Decoding Error: \(decodingError)")
+            // Gestion des erreurs de décodage
             switch decodingError {
             case .keyNotFound(let key, _):
                 print("❌ Missing key: \(key.stringValue)")
@@ -159,7 +172,9 @@ class APIService {
         }
     }
     
+    /// Récupère un candidat spécifique par son ID
     func getCandidate(id: String) async throws -> Candidate {
+        // Vérifie la présence du token d'authentification
         guard let token = UserDefaults.standard.string(forKey: "authToken") else {
             print("❌ GetCandidate - No token found")
             throw APIError.noToken
@@ -180,6 +195,7 @@ class APIService {
             if let httpResponse = response as? HTTPURLResponse {
                 print("👤 GetCandidate - Status Code: \(httpResponse.statusCode)")
                 
+                // Gestion des erreurs d'autorisation
                 if httpResponse.statusCode == 401 {
                     throw APIError.notAuthorized
                 } else if httpResponse.statusCode != 200 {
@@ -187,11 +203,13 @@ class APIService {
                 }
             }
             
+            // Décode la réponse JSON en un objet Candidate
             let candidate = try JSONDecoder().decode(Candidate.self, from: data)
             print("✅ Retrieved candidate: \(candidate.firstName) \(candidate.lastName)")
             return candidate
         } catch let decodingError as DecodingError {
             print("❌ GetCandidate - Decoding Error: \(decodingError)")
+            // Gestion des erreurs de décodage
             switch decodingError {
             case .keyNotFound(let key, _):
                 print("❌ Missing key: \(key.stringValue)")
@@ -211,77 +229,9 @@ class APIService {
         }
     }
     
-    func createCandidate(firstName: String, lastName: String, email: String, phone: String?, note: String?, linkedinURL: String?) async throws -> Candidate {
-        guard let token = UserDefaults.standard.string(forKey: "authToken") else {
-            print("❌ CreateCandidate - No token found")
-            throw APIError.noToken
-        }
-        
-        let url = URL(string: "\(baseURL)/candidate")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        // Corriger la structure pour correspondre exactement à ce que l'API attend
-        var body: [String: Any] = [
-            "firstName": firstName,
-            "lastName": lastName,
-            "email": email
-        ]
-        
-        // Ajouter les champs optionnels seulement s'ils existent
-        if let phone = phone { body["phone"] = phone }
-        if let note = note { body["note"] = note }
-        if let linkedinURL = linkedinURL { body["linkedinURL"] = linkedinURL }
-        
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-        request.httpBody = jsonData
-        
-        print("➕ CreateCandidate - Request URL: \(url)")
-        print("➕ CreateCandidate - Request Body: \(String(data: jsonData, encoding: .utf8) ?? "unable to read")")
-        print("➕ CreateCandidate - Token: \(token.prefix(10))...")
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            print("➕ CreateCandidate - Response: \(response)")
-            print("➕ CreateCandidate - Response Data: \(String(data: data, encoding: .utf8) ?? "unable to read")")
-            
-            if let httpResponse = response as? HTTPURLResponse {
-                print("➕ CreateCandidate - Status Code: \(httpResponse.statusCode)")
-                
-                if httpResponse.statusCode == 401 {
-                    throw APIError.notAuthorized
-                } else if httpResponse.statusCode != 200 && httpResponse.statusCode != 201 {
-                    throw APIError.candidateCreationFailed
-                }
-            }
-            
-            let candidate = try JSONDecoder().decode(Candidate.self, from: data)
-            print("✅ Created candidate: \(candidate.firstName) \(candidate.lastName)")
-            return candidate
-        } catch let decodingError as DecodingError {
-            print("❌ CreateCandidate - Decoding Error: \(decodingError)")
-            switch decodingError {
-            case .keyNotFound(let key, _):
-                print("❌ Missing key: \(key.stringValue)")
-            case .typeMismatch(let type, _):
-                print("❌ Type mismatch: \(type)")
-            case .valueNotFound(let type, _):
-                print("❌ Value not found: \(type)")
-            case .dataCorrupted(let context):
-                print("❌ Data corrupted: \(context.debugDescription)")
-            @unknown default:
-                print("❌ Unknown decoding error")
-            }
-            throw decodingError
-        } catch {
-            print("❌ CreateCandidate - General Error: \(error.localizedDescription)")
-            throw error
-        }
-    }
-    
+    /// Met à jour les informations d'un candidat
     func updateCandidate(id: String, firstName: String, lastName: String, email: String, phone: String?, note: String?, linkedinURL: String?) async throws -> Candidate {
+        // Vérifie la présence du token d'authentification
         guard let token = UserDefaults.standard.string(forKey: "authToken") else {
             print("❌ UpdateCandidate - No token found")
             throw APIError.noToken
@@ -293,14 +243,14 @@ class APIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        // Corriger la structure pour correspondre exactement à ce que l'API attend
+        // Structure du corps de la requête avec des champs optionnels
         var body: [String: Any] = [
             "firstName": firstName,
             "lastName": lastName,
             "email": email
         ]
         
-        // Ajouter les champs optionnels seulement s'ils existent
+        // Ajoute les champs optionnels seulement s'ils existent
         if let phone = phone { body["phone"] = phone }
         if let note = note { body["note"] = note }
         if let linkedinURL = linkedinURL { body["linkedinURL"] = linkedinURL }
@@ -320,6 +270,7 @@ class APIService {
             if let httpResponse = response as? HTTPURLResponse {
                 print("📝 UpdateCandidate - Status Code: \(httpResponse.statusCode)")
                 
+                // Gestion des erreurs d'autorisation
                 if httpResponse.statusCode == 401 {
                     throw APIError.notAuthorized
                 } else if httpResponse.statusCode != 200 {
@@ -327,11 +278,13 @@ class APIService {
                 }
             }
             
+            // Décode la réponse JSON en un objet Candidate
             let candidate = try JSONDecoder().decode(Candidate.self, from: data)
             print("✅ Updated candidate: \(candidate.firstName) \(candidate.lastName)")
             return candidate
         } catch let decodingError as DecodingError {
             print("❌ UpdateCandidate - Decoding Error: \(decodingError)")
+            // Gestion des erreurs de décodage
             switch decodingError {
             case .keyNotFound(let key, _):
                 print("❌ Missing key: \(key.stringValue)")
@@ -351,7 +304,9 @@ class APIService {
         }
     }
     
+    /// Supprime un candidat par son ID
     func deleteCandidate(id: String) async throws {
+        // Vérifie la présence du token d'authentification
         guard let token = UserDefaults.standard.string(forKey: "authToken") else {
             print("❌ DeleteCandidate - No token found")
             throw APIError.noToken
@@ -376,6 +331,7 @@ class APIService {
         
         print("🗑️ DeleteCandidate - Status Code: \(httpResponse.statusCode)")
         
+        // Vérifie si le statut HTTP est 200 (succès)
         guard httpResponse.statusCode == 200 else {
             print("❌ DeleteCandidate - Failed with status code: \(httpResponse.statusCode)")
             if httpResponse.statusCode == 401 {
@@ -388,7 +344,9 @@ class APIService {
         print("✅ Deleted candidate with ID: \(id)")
     }
     
+    /// Bascule le statut "favori" d'un candidat
     func toggleCandidateFavorite(id: String) async throws -> Candidate {
+        // Vérifie la présence du token d'authentification
         guard let token = UserDefaults.standard.string(forKey: "authToken") else {
             print("❌ ToggleFavorite - No token found")
             throw APIError.noToken
@@ -410,6 +368,7 @@ class APIService {
             if let httpResponse = response as? HTTPURLResponse {
                 print("⭐ ToggleFavorite - Status Code: \(httpResponse.statusCode)")
                 
+                // Gestion des erreurs d'autorisation
                 if httpResponse.statusCode == 401 {
                     throw APIError.notAuthorized
                 } else if httpResponse.statusCode != 200 {
@@ -417,11 +376,13 @@ class APIService {
                 }
             }
             
+            // Décode la réponse JSON en un objet Candidate
             let candidate = try JSONDecoder().decode(Candidate.self, from: data)
             print("✅ Toggled favorite status for candidate: \(candidate.firstName) \(candidate.lastName)")
             return candidate
         } catch let decodingError as DecodingError {
             print("❌ ToggleFavorite - Decoding Error: \(decodingError)")
+            // Gestion des erreurs de décodage
             switch decodingError {
             case .keyNotFound(let key, _):
                 print("❌ Missing key: \(key.stringValue)")
@@ -442,6 +403,9 @@ class APIService {
     }
 }
 
+// MARK: - APIError
+
+/// Enumération des erreurs possibles de l'API
 enum APIError: Error {
     case noToken
     case loginFailed

@@ -9,6 +9,7 @@ import Foundation
 import Combine
 
 class CandidateViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var candidates: [Candidate] = []
     @Published var selectedCandidate: Candidate?
     @Published var candidateId: String?
@@ -23,23 +24,28 @@ class CandidateViewModel: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     
+    // MARK: - Computed Properties
     var filteredCandidates: [Candidate] {
         candidates.filter { candidate in
+            // Filter by search text (name or email)
             let nameMatch = searchText.isEmpty ||
                             candidate.firstName.lowercased().contains(searchText.lowercased()) ||
                             candidate.lastName.lowercased().contains(searchText.lowercased()) ||
                             candidate.email.lowercased().contains(searchText.lowercased())
             
+            // Filter by favorites if enabled
             let favoriteMatch = !isFavoritesFiltering || candidate.isFavorite
             
             return nameMatch && favoriteMatch
         }
     }
     
+    // MARK: - Initialization
     init() {
         checkAdminStatus()
     }
     
+    // MARK: - Admin Functions
     func checkAdminStatus() {
         if let isAdmin = UserDefaults.standard.object(forKey: "isAdmin") as? Bool {
             self.isAdmin = isAdmin
@@ -49,6 +55,7 @@ class CandidateViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Validation Methods
     func isValidEmail(_ email: String) -> Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
@@ -61,6 +68,7 @@ class CandidateViewModel: ObservableObject {
         return phonePredicate.evaluate(with: phone)
     }
     
+    // MARK: - Selection Handling
     func isSelected(_ candidateId: String) -> Bool {
         return selectedCandidateIds.contains(candidateId) && isEditing
     }
@@ -77,6 +85,7 @@ class CandidateViewModel: ObservableObject {
         selectedCandidateIds.removeAll()
     }
     
+    // MARK: - Batch Operations
     @MainActor
     func deleteSelectedCandidates() {
         guard !selectedCandidateIds.isEmpty else { return }
@@ -84,15 +93,16 @@ class CandidateViewModel: ObservableObject {
         let candidatesToDelete = selectedCandidateIds
         
         selectedCandidateIds.removeAll()
-        
         isEditing = false
         
+        // Delete each selected candidate
         for id in candidatesToDelete {
             deleteCandidate(id: id) { _ in
             }
         }
     }
     
+    // MARK: - API Operations
     @MainActor
     func loadCandidates() {
         isLoading = true
@@ -126,33 +136,6 @@ class CandidateViewModel: ObservableObject {
     }
     
     @MainActor
-    func createCandidate(firstName: String, lastName: String, email: String, phone: String?, note: String?, linkedinURL: String?, completion: @escaping (Bool) -> Void) {
-        isLoading = true
-        error = nil
-        
-        Task {
-            do {
-                let newCandidate = try await APIService.shared.createCandidate(
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email,
-                    phone: phone,
-                    note: note,
-                    linkedinURL: linkedinURL
-                )
-                
-                candidates.append(newCandidate)
-                completion(true)
-            } catch {
-                self.error = "Impossible de créer le candidat: \(error.localizedDescription)"
-                print("Create candidate error: \(error.localizedDescription)")
-                completion(false)
-            }
-            isLoading = false
-        }
-    }
-    
-    @MainActor
     func updateCandidate(id: String, firstName: String, lastName: String, email: String, phone: String?, note: String?, linkedinURL: String?, completion: @escaping (Bool) -> Void) {
         isLoading = true
         error = nil
@@ -169,6 +152,7 @@ class CandidateViewModel: ObservableObject {
                     linkedinURL: linkedinURL
                 )
                 
+                // Update local data after successful API call
                 if let index = candidates.firstIndex(where: { $0.id == id }) {
                     candidates[index] = updatedCandidate
                 }
@@ -196,6 +180,7 @@ class CandidateViewModel: ObservableObject {
             do {
                 try await APIService.shared.deleteCandidate(id: id)
                 
+                // Remove from local data after successful API call
                 candidates.removeAll { $0.id == id }
                 
                 if selectedCandidate?.id == id {
@@ -214,6 +199,7 @@ class CandidateViewModel: ObservableObject {
     
     @MainActor
     func toggleFavorite(id: String, completion: @escaping (Bool) -> Void) {
+        // Check admin status before allowing favorite toggling
         let isAdmin = UserDefaults.standard.bool(forKey: "isAdmin")
         
         guard isAdmin else {
@@ -229,6 +215,7 @@ class CandidateViewModel: ObservableObject {
             do {
                 let updatedCandidate = try await APIService.shared.toggleCandidateFavorite(id: id)
                 
+                // Update local data after successful API call
                 if let index = candidates.firstIndex(where: { $0.id == id }) {
                     candidates[index] = updatedCandidate
                 }

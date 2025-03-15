@@ -8,6 +8,7 @@
 import Foundation
 
 class RegisterViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var firstName: String = ""
     @Published var lastName: String = ""
     @Published var email: String = ""
@@ -21,6 +22,7 @@ class RegisterViewModel: ObservableObject {
     @Published var error: String? = nil
     @Published var isRegistered: Bool = false
     
+    // MARK: - Validation Methods
     func validateEmail() {
         isEmailValid = isValidEmail(email)
     }
@@ -43,8 +45,10 @@ class RegisterViewModel: ObservableObject {
         return !firstName.isEmpty && !lastName.isEmpty && isEmailValid && passwordsMatch && !password.isEmpty && !confirmPassword.isEmpty
     }
     
+    // MARK: - User Registration
     @MainActor
     func register() {
+        // Validate form before attempting registration
         validateEmptyFields()
         validateEmail()
         validatePasswords()
@@ -56,6 +60,7 @@ class RegisterViewModel: ObservableObject {
         
         Task {
             do {
+                // Register new user
                 try await APIService.shared.register(
                     firstName: firstName,
                     lastName: lastName,
@@ -63,7 +68,7 @@ class RegisterViewModel: ObservableObject {
                     password: password
                 )
                 
-                // After successful registration, we automatically log in
+                // Automatically log in after successful registration
                 let response = try await APIService.shared.authenticate(email: email, password: password)
                 UserDefaults.standard.set(response.token, forKey: "authToken")
                 UserDefaults.standard.set(response.isAdmin, forKey: "isAdmin")

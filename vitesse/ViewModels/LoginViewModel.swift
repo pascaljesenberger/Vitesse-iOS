@@ -8,6 +8,7 @@
 import Foundation
 
 class LoginViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var email: String = ""
     @Published var password: String = ""
     
@@ -18,6 +19,7 @@ class LoginViewModel: ObservableObject {
     @Published var isLoggedIn: Bool = false
     @Published var isAdmin: Bool = false
     
+    // MARK: - Validation Methods
     func validateEmail() {
         isEmailValid = isValidEmail(email)
     }
@@ -36,8 +38,10 @@ class LoginViewModel: ObservableObject {
         return !email.isEmpty && !password.isEmpty && isEmailValid
     }
     
+    // MARK: - Authentication
     @MainActor
     func login() {
+        // Validate form before attempting login
         validateEmptyFields()
         validateEmail()
         
@@ -48,6 +52,7 @@ class LoginViewModel: ObservableObject {
         
         Task {
             do {
+                // Authenticate and store user session data
                 let response = try await APIService.shared.authenticate(email: email, password: password)
                 UserDefaults.standard.set(response.token, forKey: "authToken")
                 UserDefaults.standard.set(response.isAdmin, forKey: "isAdmin")
