@@ -16,7 +16,7 @@ struct CandidateRow: View {
     var onToggleSelection: () -> Void = {}
 
     var body: some View {
-        NavigationLink(destination: CandidateDetailView(candidate: candidate)) {
+        NavigationLink(destination: CandidateDetailView(candidate: candidate, viewModel: CandidateViewModel())) {
             HStack {
                 if isEditing {
                     Button(action: onToggleSelection) {

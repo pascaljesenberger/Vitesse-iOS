@@ -21,6 +21,9 @@ struct ContactInfoRow: View {
             
             if isLinkedIn {
                 Button(action: {
+                    if let url = URL(string: value), UIApplication.shared.canOpenURL(url) {
+                        UIApplication.shared.open(url)
+                    }
                 }) {
                     Text("Go on LinkedIn")
                         .font(.system(size: 14))
