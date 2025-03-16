@@ -29,9 +29,9 @@ class CandidateViewModel: ObservableObject {
         candidates.filter { candidate in
             // Filter by search text (name or email)
             let nameMatch = searchText.isEmpty ||
-                            candidate.firstName.lowercased().contains(searchText.lowercased()) ||
-                            candidate.lastName.lowercased().contains(searchText.lowercased()) ||
-                            candidate.email.lowercased().contains(searchText.lowercased())
+            candidate.firstName.lowercased().contains(searchText.lowercased()) ||
+            candidate.lastName.lowercased().contains(searchText.lowercased()) ||
+            candidate.email.lowercased().contains(searchText.lowercased())
             
             // Filter by favorites if enabled
             let favoriteMatch = !isFavoritesFiltering || candidate.isFavorite

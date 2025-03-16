@@ -72,6 +72,51 @@ final class LoginViewModelTests: XCTestCase {
         
         wait(for: [expectation], timeout: 0.1)
     }
+    
+    @MainActor func testLoginWithValidFormShouldProceed() {
+        viewModel.email = "test@example.com"
+        viewModel.password = "password123"
+        
+        let expectation = XCTestExpectation(description: "Login should be attempted")
+        
+        viewModel.login()
+        
+        XCTAssertTrue(viewModel.isLoading, "Loading state should be triggered with valid form")
+        
+        wait(for: [expectation], timeout: 1.0)
+    }
+    
+    @MainActor func testLoginWithNetworkError() {
+        viewModel.email = "test@example.com"
+        viewModel.password = "password123"
+        
+        let expectation = XCTestExpectation(description: "Login should handle network error")
+        
+        viewModel.login()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssertNotNil(self.viewModel.error, "Error should be set when network request fails")
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 2.0)
+    }
+    
+    @MainActor func testLoginSuccess() {
+        viewModel.email = "test@example.com"
+        viewModel.password = "password123"
+        
+        let expectation = XCTestExpectation(description: "Login should succeed")
+        
+        viewModel.login()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssertTrue(self.viewModel.isLoggedIn, "User should be logged in after successful login")
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 2.0)
+    }
 }
 
 // MARK: - RegisterViewModelTests
@@ -141,6 +186,41 @@ final class RegisterViewModelTests: XCTestCase {
         viewModel.confirmPassword = "different"
         viewModel.validatePasswords()
         XCTAssertFalse(viewModel.isFormValid, "Form should be invalid with mismatched passwords")
+    }
+    
+    @MainActor func testRegisterWithValidFormShouldProceed() {
+        viewModel.firstName = "John"
+        viewModel.lastName = "Doe"
+        viewModel.email = "john@example.com"
+        viewModel.password = "password123"
+        viewModel.confirmPassword = "password123"
+        
+        let expectation = XCTestExpectation(description: "Register should be attempted")
+        
+        viewModel.register()
+        
+        XCTAssertTrue(viewModel.isLoading, "Loading state should be triggered with valid form")
+        
+        wait(for: [expectation], timeout: 1.0)
+    }
+    
+    @MainActor func testRegisterWithNetworkError() {
+        viewModel.firstName = "John"
+        viewModel.lastName = "Doe"
+        viewModel.email = "john@example.com"
+        viewModel.password = "password123"
+        viewModel.confirmPassword = "password123"
+        
+        let expectation = XCTestExpectation(description: "Register should handle network error")
+        
+        viewModel.register()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssertNotNil(self.viewModel.error, "Error should be set when network request fails")
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 2.0)
     }
 }
 
@@ -244,6 +324,32 @@ final class CandidateViewModelTests: XCTestCase {
         // No results scenario
         viewModel.searchText = "John"
         XCTAssertEqual(viewModel.filteredCandidates.count, 0, "Should return no results when filtering for John in favorites")
+    }
+    
+    @MainActor func testLoadCandidates() {
+        let expectation = XCTestExpectation(description: "Candidates should be loaded")
+        
+        viewModel.loadCandidates()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssertFalse(self.viewModel.candidates.isEmpty, "Candidates should be loaded")
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 2.0)
+    }
+    
+    @MainActor func testLoadCandidatesWithError() {
+        let expectation = XCTestExpectation(description: "Candidates loading should handle error")
+        
+        viewModel.loadCandidates()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssertNotNil(self.viewModel.error, "Error should be set when candidates loading fails")
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 2.0)
     }
 }
 
