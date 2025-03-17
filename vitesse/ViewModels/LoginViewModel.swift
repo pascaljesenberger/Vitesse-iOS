@@ -12,7 +12,6 @@ class LoginViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
     
-    @Published var isEmailValid: Bool = true
     @Published var hasEmptyFields: Bool = false
     @Published var isLoading: Bool = false
     @Published var error: String? = nil
@@ -20,22 +19,12 @@ class LoginViewModel: ObservableObject {
     @Published var isAdmin: Bool = false
     
     // MARK: - Validation Methods
-    func validateEmail() {
-        isEmailValid = isValidEmail(email)
-    }
-    
     func validateEmptyFields() {
         hasEmptyFields = email.isEmpty || password.isEmpty
     }
     
-    private func isValidEmail(_ email: String) -> Bool {
-        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPred = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
-        return emailPred.evaluate(with: email)
-    }
-    
     var isFormValid: Bool {
-        return !email.isEmpty && !password.isEmpty && isEmailValid
+        return !email.isEmpty && !password.isEmpty
     }
     
     // MARK: - Authentication
@@ -43,7 +32,6 @@ class LoginViewModel: ObservableObject {
     func login() {
         // Validate form before attempting login
         validateEmptyFields()
-        validateEmail()
         
         guard isFormValid else { return }
         
@@ -59,8 +47,17 @@ class LoginViewModel: ObservableObject {
                 self.isAdmin = response.isAdmin
                 self.isLoggedIn = true
                 print("Login successful for: \(email)")
+            } catch APIError.loginFailed {
+                self.error = "Invalid email/username or password. Please check your credentials and try again."
+                print("Login failed: Invalid credentials")
+            } catch APIError.invalidResponse {
+                self.error = "The server returned an unexpected response. Please try again later."
+                print("Login error: Invalid server response")
+            } catch APIError.notAuthorized {
+                self.error = "You are not authorized to access this application."
+                print("Login error: Not authorized")
             } catch {
-                self.error = "An error occurred during login. Please try again later."
+                self.error = "An error occurred: \(error.localizedDescription)"
                 print("Login error: \(error.localizedDescription)")
             }
             self.isLoading = false

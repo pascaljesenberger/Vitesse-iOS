@@ -75,8 +75,17 @@ class RegisterViewModel: ObservableObject {
                 
                 self.isRegistered = true
                 print("Registration successful for: \(firstName) \(lastName), Email: \(email)")
+            } catch APIError.registrationFailed {
+                self.error = "Registration failed. This email may already be registered."
+                print("Registration error: Registration failed")
+            } catch APIError.invalidResponse {
+                self.error = "The server returned an unexpected response. Please try again later."
+                print("Registration error: Invalid server response")
+            } catch DecodingError.dataCorrupted(let context) {
+                self.error = "Data corruption error: \(context.debugDescription)"
+                print("Registration error: Data corrupted")
             } catch {
-                self.error = "An error occurred during registration. Please try again later."
+                self.error = "An error occurred: \(error.localizedDescription)"
                 print("Registration error: \(error.localizedDescription)")
             }
             self.isLoading = false
