@@ -10,6 +10,7 @@ import SwiftUI
 struct RegisterView: View {
     @StateObject private var viewModel = RegisterViewModel()
     @Environment(\.dismiss) private var dismiss
+    @State private var showSuccessAlert = false
     
     var body: some View {
         NavigationStack {
@@ -122,8 +123,15 @@ struct RegisterView: View {
                 .background(Color.white)
                 .onChange(of: viewModel.isRegistered) {
                     if viewModel.isRegistered {
+                        showSuccessAlert = true
+                    }
+                }
+                .alert("Account Created", isPresented: $showSuccessAlert) {
+                    Button("OK") {
                         dismiss()
                     }
+                } message: {
+                    Text("Your account has been successfully created. You can now login.")
                 }
             }
             .toolbar {
