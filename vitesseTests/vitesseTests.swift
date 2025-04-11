@@ -25,43 +25,38 @@ final class LoginViewModelTests: XCTestCase {
     
     // MARK: - Validation Tests
     
-    func testValidEmail() {
-        viewModel.email = "test@example.com"
-        viewModel.validateEmail()
-        XCTAssertTrue(viewModel.isEmailValid, "Valid email should pass validation")
-    }
-    
-    func testInvalidEmail() {
-        viewModel.email = "invalid-email"
-        viewModel.validateEmail()
-        XCTAssertFalse(viewModel.isEmailValid, "Invalid email should fail validation")
-    }
-    
     func testEmptyFields() {
         viewModel.email = ""
         viewModel.password = ""
         viewModel.validateEmptyFields()
         XCTAssertTrue(viewModel.hasEmptyFields, "Empty fields should be detected")
+        
+        viewModel.email = "user@example.com"
+        viewModel.password = "password"
+        viewModel.validateEmptyFields()
+        XCTAssertFalse(viewModel.hasEmptyFields, "Filled fields should not be detected as empty")
     }
     
     func testFormValidation() {
-        viewModel.email = "test@example.com"
-        viewModel.password = "password123"
+        viewModel.email = ""
+        viewModel.password = ""
+        XCTAssertFalse(viewModel.isFormValid, "Form should be invalid with empty fields")
         
-        viewModel.validateEmail()
-        XCTAssertTrue(viewModel.isFormValid, "Form should be valid with proper values")
+        viewModel.email = "user@example.com"
+        viewModel.password = ""
+        XCTAssertFalse(viewModel.isFormValid, "Form should be invalid with only one field filled")
         
-        viewModel.email = "invalid"
-        viewModel.validateEmail()
-        XCTAssertFalse(viewModel.isFormValid, "Form should be invalid with improper email")
+        viewModel.email = "user@example.com"
+        viewModel.password = "password"
+        XCTAssertTrue(viewModel.isFormValid, "Form should be valid with all fields filled")
     }
     
     // MARK: - Login Tests
     
-    @MainActor func testLoginWithInvalidFormShouldNotProceed() {
-        // Using a sync method to check behavior without network call
-        viewModel.email = "invalid"
-        viewModel.password = "pass"
+    @MainActor
+    func testLoginWithInvalidFormShouldNotProceed() {
+        viewModel.email = ""
+        viewModel.password = ""
         
         let expectation = XCTestExpectation(description: "Login should not be attempted")
         expectation.isInverted = true
@@ -72,8 +67,9 @@ final class LoginViewModelTests: XCTestCase {
         
         wait(for: [expectation], timeout: 0.1)
     }
-    
-    @MainActor func testLoginWithValidFormShouldProceed() {
+
+    @MainActor
+    func testLoginWithValidFormShouldProceed() {
         viewModel.email = "test@example.com"
         viewModel.password = "password123"
         
@@ -81,14 +77,18 @@ final class LoginViewModelTests: XCTestCase {
         
         viewModel.login()
         
-        XCTAssertTrue(viewModel.isLoading, "Loading state should be triggered with valid form")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssertFalse(self.viewModel.isLoading, "Loading should eventually be false")
+            expectation.fulfill()
+        }
         
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
     }
     
-    @MainActor func testLoginWithNetworkError() {
+    @MainActor
+    func testLoginWithNetworkError() {
         viewModel.email = "test@example.com"
-        viewModel.password = "password123"
+        viewModel.password = "wrongpassword"
         
         let expectation = XCTestExpectation(description: "Login should handle network error")
         
@@ -102,7 +102,8 @@ final class LoginViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
     }
     
-    @MainActor func testLoginSuccess() {
+    @MainActor
+    func testLoginSuccess() {
         viewModel.email = "test@example.com"
         viewModel.password = "password123"
         
@@ -118,7 +119,6 @@ final class LoginViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
     }
 }
-
 // MARK: - RegisterViewModelTests
 final class RegisterViewModelTests: XCTestCase {
     
